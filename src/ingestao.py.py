@@ -28,22 +28,10 @@ df_full.coalesce(1).write.format('delta').saveAsTable(f'{catalog}.{database}.{ta
 
 # COMMAND ----------
 
-df.display()
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
 # MAGIC %sql
 # MAGIC
 # MAGIC select * from bronze.operadoras_full.operadoras
 # MAGIC
-
-# COMMAND ----------
-
-
 
 # COMMAND ----------
 
