@@ -1,5 +1,11 @@
 # Databricks notebook source
 import delta
+import sys
+
+sys.path.insert(0, "../lib/")
+
+import utils
+import ingestors
 
 # Definir a configuração do parâmetro
 spark.conf.set("spark.sql.legacy.parquet.nanosAsLong", "true")
@@ -9,30 +15,31 @@ spark.conf.set("spark.sql.legacy.parquet.nanosAsLong", "true")
 catalog = 'bronze'
 database = 'operadoras_full'
 table = 'operadoras'
+path_full = '/Volumes/landing/upsell/operadoras/full/'
 
 # COMMAND ----------
 
-def table_exists(catalog, database, table):
-    count = (spark.sql(f"show tables from {catalog}.{database}").filter(f"database = '{database}' and tableName = '{table}'")).count()
+if not utils.table_exists(catalog, database, table):
 
-    return count == 1
+    print('Tabela não existente, criando...')
 
-#table_exists(catalog, database, table)
+    ingest_full_load = ingestors.Ingestor(spark = spark,
+                                          catalog = catalog,
+                                          database = database,
+                                          table = table)
+    
+    ingest_full_load.execute_full_load(path_full)
+    print("Carga full-load realizada com sucesso!")
 
-
-# COMMAND ----------
-
-if not table_exists(catalog, database, table):
-
-    print('Tabela não existente, construindo...')
-
-    df_full = (spark.read.format('parquet')
-        .option("inferSchema", "true")
-        .load('/Volumes/landing/upsell/operadoras/full/'))
-
-    df_full.coalesce(1).write.format('delta').mode('overwrite').saveAsTable(f'{catalog}.{database}.{table}')
 else:
-    print('tabela já existente, realizando CDC...')
+    print("Tabela já existe, realizando CDC...")
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
 
     df_cdc = (spark.read.format('parquet')
         .option("inferSchema", "true")
